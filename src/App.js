@@ -21,6 +21,11 @@ const App = () => {
   const [text, setText] = useState('');
   const [interimText, setInterimText] = useState('');
   const [recognition, setRecognition] = useState(null);
+  const [logs, setLogs] = useState([]); // 로그 메시지를 저장할 상태
+
+  const addLog = (message) => {
+    setLogs((prevLogs) => [...prevLogs, message]);
+  };
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
@@ -44,12 +49,14 @@ const App = () => {
         setInterimText(interimTranscript);
 
         // 실시간으로 텍스트를 서버에 저장
+        addLog(`Saving text to server: ${finalTranscript}`);
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
           text: finalTranscript,
         });
       };
 
       recog.onend = async () => {
+        addLog(`Recognition ended, saving text to server: ${text}`);
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, { text });
       };
 
@@ -62,8 +69,10 @@ const App = () => {
   const handleListen = () => {
     if (recognition) {
       if (isListening) {
+        addLog('Stopping recognition');
         recognition.stop();
       } else {
+        addLog('Starting recognition');
         recognition.start();
       }
       setIsListening(!isListening);
@@ -73,11 +82,14 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        addLog('Fetching text from server');
         const result = await axios.get(
           `${http}://${ipAddress}:${port}/get-text`
         );
+        addLog(`Fetched text: ${result.data.text}`);
         setText(result.data.text);
       } catch (error) {
+        addLog(`Error fetching text: ${error}`);
         console.error('Error fetching text:', error);
       }
     };
@@ -102,6 +114,21 @@ const App = () => {
       <p>
         {text} <span style={{ color: 'gray' }}>{interimText}</span>
       </p>
+      <div
+        style={{
+          textAlign: 'left',
+          marginTop: '20px',
+          maxHeight: '200px',
+          overflowY: 'scroll',
+          backgroundColor: '#f0f0f0',
+          padding: '10px',
+        }}
+      >
+        <h2>Logs</h2>
+        {logs.map((log, index) => (
+          <p key={index}>{log}</p>
+        ))}
+      </div>
     </div>
   );
 };
