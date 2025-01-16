@@ -29,7 +29,7 @@ const App = () => {
       recog.interimResults = true;
       recog.lang = 'ko-KR';
 
-      recog.onresult = (event) => {
+      recog.onresult = async (event) => {
         let finalTranscript = '';
         let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -42,6 +42,11 @@ const App = () => {
         }
         setText(finalTranscript);
         setInterimText(interimTranscript);
+
+        // 실시간으로 텍스트를 서버에 저장
+        await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
+          text: finalTranscript,
+        });
       };
 
       recog.onend = async () => {
@@ -67,10 +72,21 @@ const App = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const result = await axios.get(`${http}://${ipAddress}:${port}/get-text`);
-      setText(result.data.text);
+      try {
+        const result = await axios.get(
+          `${http}://${ipAddress}:${port}/get-text`
+        );
+        setText(result.data.text);
+      } catch (error) {
+        console.error('Error fetching text:', error);
+      }
     };
-    fetchData();
+
+    // 주기적으로 서버에서 텍스트를 가져옴 (예: 1초마다)
+    const intervalId = setInterval(fetchData, 1000);
+
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
