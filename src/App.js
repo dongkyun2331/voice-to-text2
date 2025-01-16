@@ -128,7 +128,6 @@ const App = () => {
             textAlign: 'center',
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             color: 'white',
-            padding: '10px',
           }}
         >
           <p style={{ whiteSpace: 'pre-line', margin: 0 }}>
