@@ -59,7 +59,7 @@ const App = () => {
             interimTranscript += transcript;
           }
         }
-        setText(finalTranscript);
+        setText((prevText) => prevText + finalTranscript);
         setInterimText(interimTranscript);
 
         // 실시간으로 텍스트를 서버에 저장
@@ -125,7 +125,6 @@ const App = () => {
           style={{
             position: 'fixed',
             bottom: '10px',
-            width: '100%',
             textAlign: 'center',
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             color: 'white',
