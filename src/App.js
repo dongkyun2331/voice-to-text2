@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import config from './config';
 
 const loadConfig = async () => {
@@ -22,6 +23,7 @@ const App = () => {
   const [interimText, setInterimText] = useState('');
   const [recognition, setRecognition] = useState(null);
   const [logs, setLogs] = useState([]); // 로그 메시지를 저장할 상태
+  const logsEndRef = useRef(null); // 로그 끝 부분을 참조하는 ref
 
   const addLog = (message) => {
     setLogs((prevLogs) => [...prevLogs, message]);
@@ -101,35 +103,51 @@ const App = () => {
     return () => clearInterval(intervalId);
   }, []);
 
+  useEffect(() => {
+    // 로그가 업데이트될 때마다 스크롤을 하단으로 이동
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
+
   return (
-    <div
-      style={{
-        textAlign: 'center',
-        marginTop: '50px',
-        backgroundColor: 'transparent',
-      }}
-    >
-      <h1>음성을 텍스트로 변환</h1>
-      <button onClick={handleListen}>{isListening ? '중지' : '시작'}</button>
-      <p>
-        {text} <span style={{ color: 'gray' }}>{interimText}</span>
-      </p>
+    <Router>
       <div
         style={{
-          textAlign: 'left',
-          marginTop: '20px',
-          maxHeight: '200px',
-          overflowY: 'scroll',
-          backgroundColor: '#f0f0f0',
-          padding: '10px',
+          textAlign: 'center',
+          marginTop: '50px',
+          backgroundColor: 'transparent',
         }}
       >
-        <h2>Logs</h2>
-        {logs.map((log, index) => (
-          <p key={index}>{log}</p>
-        ))}
+        <button onClick={handleListen}>{isListening ? '중지' : '시작'}</button>
+        <p>
+          {text} <span style={{ color: 'gray' }}>{interimText}</span>
+        </p>
+        <Routes>
+          <Route
+            path="/debug"
+            element={
+              <div
+                style={{
+                  textAlign: 'left',
+                  marginTop: '20px',
+                  maxHeight: '200px',
+                  overflowY: 'scroll',
+                  backgroundColor: '#f0f0f0',
+                  padding: '10px',
+                }}
+              >
+                <h2>Logs</h2>
+                {logs.map((log, index) => (
+                  <p key={index}>{log}</p>
+                ))}
+                <div ref={logsEndRef} />
+              </div>
+            }
+          />
+        </Routes>
       </div>
-    </div>
+    </Router>
   );
 };
 
