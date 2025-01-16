@@ -47,7 +47,9 @@ const App = () => {
             interimTranscript += transcript;
           }
         }
-        setText((prevText) => prevText + finalTranscript);
+        setText((prevText) =>
+          (prevText.trim() + '\n' + finalTranscript.trim()).trim()
+        );
         setInterimText(interimTranscript);
 
         // 실시간으로 텍스트를 서버에 저장
