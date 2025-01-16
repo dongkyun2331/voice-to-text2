@@ -47,7 +47,9 @@ const App = () => {
             interimTranscript += transcript;
           }
         }
-        setText((prevText) => prevText.trim() + '\n' + finalTranscript.trim());
+        setText((prevText) =>
+          (prevText.trim() + '\n' + finalTranscript.trim()).trim()
+        );
         setInterimText(interimTranscript);
 
         // 실시간으로 텍스트를 서버에 저장
@@ -89,7 +91,7 @@ const App = () => {
           `${http}://${ipAddress}:${port}/get-text`
         );
         addLog(`Fetched text: ${result.data.text}`);
-        setText(result.data.text);
+        setText(result.data.text.trim());
       } catch (error) {
         addLog(`Error fetching text: ${error}`);
         console.error('Error fetching text:', error);
