@@ -59,7 +59,7 @@ const App = () => {
             interimTranscript += transcript;
           }
         }
-        setText((prevText) => prevText + finalTranscript);
+        setText(finalTranscript);
         setInterimText(interimTranscript);
 
         // 실시간으로 텍스트를 서버에 저장
@@ -121,9 +121,21 @@ const App = () => {
         }}
       >
         <button onClick={handleListen}>{isListening ? '중지' : '시작'}</button>
-        <p style={{ whiteSpace: 'pre-line' }}>
-          {text} <span style={{ color: 'gray' }}>{interimText}</span>
-        </p>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '10px',
+            width: '100%',
+            textAlign: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            color: 'white',
+            padding: '10px',
+          }}
+        >
+          <p style={{ whiteSpace: 'pre-line', margin: 0 }}>
+            {text} <span style={{ color: 'gray' }}>{interimText}</span>
+          </p>
+        </div>
         <Routes>
           <Route
             path="/debug"
