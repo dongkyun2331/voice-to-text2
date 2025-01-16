@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import config from './config';
@@ -29,18 +29,6 @@ const App = () => {
     setLogs((prevLogs) => [...prevLogs, message]);
   };
 
-  const fetchTextFromServer = useCallback(async () => {
-    try {
-      addLog('Fetching text from server');
-      const result = await axios.get(`${http}://${ipAddress}:${port}/get-text`);
-      addLog(`Fetched text: ${result.data.text}`);
-      setText(result.data.text);
-    } catch (error) {
-      addLog(`Error fetching text: ${error}`);
-      console.error('Error fetching text:', error);
-    }
-  }, []);
-
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
       const recog = new window.webkitSpeechRecognition();
@@ -67,24 +55,18 @@ const App = () => {
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
           text: finalTranscript,
         });
-
-        // 서버에서 텍스트를 가져옴
-        fetchTextFromServer();
       };
 
       recog.onend = async () => {
         addLog(`Recognition ended, saving text to server: ${text}`);
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, { text });
-
-        // 서버에서 텍스트를 가져옴
-        fetchTextFromServer();
       };
 
       setRecognition(recog);
     } else {
       alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
     }
-  }, [isListening, text, fetchTextFromServer]);
+  }, [isListening, text]);
 
   const handleListen = () => {
     if (recognition) {
@@ -100,9 +82,26 @@ const App = () => {
   };
 
   useEffect(() => {
-    // 초기 로드 시 서버에서 텍스트를 가져옴
-    fetchTextFromServer();
-  }, [fetchTextFromServer]);
+    const fetchData = async () => {
+      try {
+        addLog('Fetching text from server');
+        const result = await axios.get(
+          `${http}://${ipAddress}:${port}/get-text`
+        );
+        addLog(`Fetched text: ${result.data.text}`);
+        setText(result.data.text.trim());
+      } catch (error) {
+        addLog(`Error fetching text: ${error}`);
+        console.error('Error fetching text:', error);
+      }
+    };
+
+    // 주기적으로 서버에서 텍스트를 가져옴 (예: 초마다)
+    const intervalId = setInterval(fetchData, 500);
+
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     // 로그가 업데이트될 때마다 스크롤을 하단으로 이동
@@ -121,19 +120,9 @@ const App = () => {
         }}
       >
         <button onClick={handleListen}>{isListening ? '중지' : '시작'}</button>
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '10px',
-            textAlign: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-          }}
-        >
-          <p style={{ whiteSpace: 'pre-line', margin: 0 }}>
-            {text} <span style={{ color: 'gray' }}>{interimText}</span>
-          </p>
-        </div>
+        <p style={{ whiteSpace: 'pre-line' }}>
+          {text} <span style={{ color: 'gray' }}>{interimText}</span>
+        </p>
         <Routes>
           <Route
             path="/debug"
