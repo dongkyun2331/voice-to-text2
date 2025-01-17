@@ -3,20 +3,6 @@ import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import config from './config';
 
-const loadConfig = async () => {
-  try {
-    const response = await axios.get('/config.json');
-    return response.data;
-  } catch (error) {
-    console.error('Error loading config:', error);
-    return null;
-  }
-};
-
-const { ipAddress } = await loadConfig();
-
-const { port, http } = config;
-
 const App = () => {
   const [isListening, setIsListening] = useState(false);
   const [text, setText] = useState('');
@@ -24,10 +10,25 @@ const App = () => {
   const [recognition, setRecognition] = useState(null);
   const [logs, setLogs] = useState([]); // 로그 메시지를 저장할 상태
   const logsEndRef = useRef(null); // 로그 끝 부분을 참조하는 ref
+  const [ipAddress, setIpAddress] = useState('');
+  const { port, http } = config;
 
   const addLog = (message) => {
     setLogs((prevLogs) => [...prevLogs, message]);
   };
+
+  // config.json을 로드하고 ipAddress 설정
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await axios.get('/config.json');
+        setIpAddress(response.data.ipAddress);
+      } catch (error) {
+        console.error('Error loading config:', error);
+      }
+    };
+    loadConfig();
+  }, []);
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
@@ -66,7 +67,7 @@ const App = () => {
     } else {
       alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
     }
-  }, [isListening, text]);
+  }, [isListening, text, ipAddress, http, port]);
 
   const handleListen = () => {
     if (recognition) {
@@ -101,7 +102,7 @@ const App = () => {
 
     // 컴포넌트 언마운트 시 인터벌 정리
     return () => clearInterval(intervalId);
-  }, []);
+  }, [http, ipAddress, port]);
 
   useEffect(() => {
     // 로그가 업데이트될 때마다 스크롤을 하단으로 이동
@@ -124,6 +125,7 @@ const App = () => {
           {text} <span style={{ color: 'gray' }}>{interimText}</span>
         </p>
         <Routes>
+          <Route path="/" element={<div></div>} />
           <Route
             path="/debug"
             element={
