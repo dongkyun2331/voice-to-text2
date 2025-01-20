@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import io from 'socket.io-client';
 import config from './config';
 
 const loadConfig = async () => {
@@ -16,6 +17,8 @@ const loadConfig = async () => {
 const { ipAddress } = await loadConfig();
 
 const { port, http } = config;
+
+const socket = io(`${http}://${ipAddress}:${port}`);
 
 const App = () => {
   const [isListening, setIsListening] = useState(false);
@@ -43,6 +46,16 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    socket.on('new-text', (newText) => {
+      setText(newText);
+    });
+
+    return () => {
+      socket.off('new-text');
+    };
+  }, []);
+
+  useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
       const recog = new window.webkitSpeechRecognition();
       recog.continuous = true;
@@ -60,7 +73,7 @@ const App = () => {
             interimTranscript += transcript;
           }
         }
-        setText((prevText) => prevText + finalTranscript);
+        setText((prevText) => prevText + ' ' + finalTranscript);
         setInterimText(interimTranscript);
 
         // 실시간으로 텍스트를 서버에 저장
@@ -68,9 +81,6 @@ const App = () => {
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
           text: finalTranscript,
         });
-
-        // 서버에서 텍스트를 가져옴
-        fetchTextFromServer();
       };
 
       recog.onend = async () => {
