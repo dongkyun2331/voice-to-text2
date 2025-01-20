@@ -84,11 +84,15 @@ const App = () => {
       };
 
       recog.onend = async () => {
-        addLog(`Recognition ended, saving text to server: ${text}`);
-        await axios.post(`${http}://${ipAddress}:${port}/save-text`, { text });
+        if (isListening) {
+          addLog(`Recognition ended, saving text to server: ${text}`);
+          await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
+            text,
+          });
 
-        // 서버에서 텍스트를 가져옴
-        fetchTextFromServer();
+          // 서버에서 텍스트를 가져옴
+          fetchTextFromServer();
+        }
       };
 
       setRecognition(recog);
