@@ -39,6 +39,7 @@ const App = () => {
       const result = await axios.get(`${http}://${ipAddress}:${port}/get-text`);
       addLog(`Fetched text: ${result.data.text}`);
       setText(result.data.text);
+      setInterimText(result.data.interimText);
     } catch (error) {
       addLog(`Error fetching text: ${error}`);
       console.error('Error fetching text:', error);
@@ -46,12 +47,18 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    socket.on('new-text', (newText) => {
-      setText(newText);
+    socket.on('new-text', ({ text, interimText }) => {
+      setText(text);
+      setInterimText(interimText);
+    });
+
+    socket.on('new-interim-text', (newInterimText) => {
+      setInterimText(newInterimText);
     });
 
     return () => {
       socket.off('new-text');
+      socket.off('new-interim-text');
     };
   }, []);
 
@@ -80,6 +87,11 @@ const App = () => {
         addLog(`Saving text to server: ${finalTranscript}`);
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
           text: finalTranscript,
+        });
+
+        // 실시간으로 중간 텍스트를 서버에 저장
+        await axios.post(`${http}://${ipAddress}:${port}/save-interim-text`, {
+          interimText: interimTranscript,
         });
       };
 
