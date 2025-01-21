@@ -101,9 +101,6 @@ const App = () => {
           await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
             text,
           });
-
-          // 서버에서 텍스트를 가져옴
-          fetchTextFromServer();
         }
       };
 
@@ -111,7 +108,7 @@ const App = () => {
     } else {
       alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
     }
-  }, [isListening, text, fetchTextFromServer]);
+  }, [isListening, text]);
 
   const handleListen = () => {
     if (recognition) {
@@ -159,7 +156,6 @@ const App = () => {
           style={{
             position: 'fixed',
             bottom: '10px',
-            width: '100%',
             textAlign: 'left',
             padding: '10px',
             maxHeight: '4em',
@@ -174,7 +170,7 @@ const App = () => {
                 display: 'inline',
               }}
             >
-              {text} <span style={{ color: 'gray' }}>{interimText}</span>
+              {text} <span style={{ color: 'white' }}>{interimText}</span>
             </span>
           </p>
           <div ref={textEndRef} />
