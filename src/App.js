@@ -155,7 +155,7 @@ const App = () => {
         <div
           style={{
             position: 'fixed',
-            bottom: '10px',
+            bottom: '42px',
             textAlign: 'left',
             padding: '10px',
             maxHeight: '4em',
