@@ -158,14 +158,15 @@ const App = () => {
             bottom: '42px',
             textAlign: 'left',
             padding: '10px',
-            maxHeight: '4em',
+            height: '4em',
             overflowY: 'auto',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            width: '100%',
           }}
         >
           <p style={{ whiteSpace: 'pre-line', margin: 0 }}>
             <span
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
                 color: 'white',
                 display: 'inline',
               }}
