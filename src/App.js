@@ -161,8 +161,8 @@ const App = () => {
             height: '4em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
-            width: '100%',
           }}
+          className="memo-box"
         >
           <p style={{ whiteSpace: 'pre-line', margin: 0 }}>
             <span
