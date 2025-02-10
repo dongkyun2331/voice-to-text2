@@ -83,19 +83,18 @@ const App = () => {
         setText((prevText) => prevText + ' ' + finalTranscript);
         setInterimText(interimTranscript);
 
-        // 실시간으로 텍스트를 서버에 저장
         addLog(`Saving text to server: ${finalTranscript}`);
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
           text: finalTranscript,
         });
 
-        // 실시간으로 중간 텍스트를 서버에 저장
         await axios.post(`${http}://${ipAddress}:${port}/save-interim-text`, {
-          interimText: interimTranscript,
+          interimText,
         });
       };
 
       recog.onend = async () => {
+        // onend 이벤트 내에서 최신 상태에 접근이 필요하다면 useRef를 고려하세요.
         if (isListening) {
           addLog(`Recognition ended, saving text to server: ${text}`);
           await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
@@ -108,7 +107,8 @@ const App = () => {
     } else {
       alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
     }
-  }, [isListening, text]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 의존성 배열을 빈 배열로 수정!
 
   const handleListen = () => {
     if (recognition) {
@@ -151,7 +151,9 @@ const App = () => {
           backgroundColor: 'transparent',
         }}
       >
-        <button onClick={handleListen}>{isListening ? '중지' : '시작'}</button>
+        <button onClick={handleListen} className="ats-start">
+          {isListening ? '중지' : '시작'}
+        </button>
         <div
           style={{
             position: 'fixed',
