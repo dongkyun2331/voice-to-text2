@@ -230,7 +230,7 @@ const App = () => {
             bottom: '42px',
             textAlign: 'left',
             padding: '10px 10px 10px 100px',
-            height: '4em',
+            height: '6em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
           }}
@@ -265,7 +265,7 @@ const App = () => {
             left: '0px',
             textAlign: 'left',
             padding: '10px',
-            height: '4em',
+            height: '6em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
           }}
