@@ -15,9 +15,7 @@ const loadConfig = async () => {
 };
 
 const { ipAddress } = await loadConfig();
-
 const { port, http } = config;
-
 const socket = io(`${http}://${ipAddress}:${port}`);
 
 const App = () => {
@@ -25,9 +23,15 @@ const App = () => {
   const [text, setText] = useState('');
   const [interimText, setInterimText] = useState('');
   const [recognition, setRecognition] = useState(null);
-  const [logs, setLogs] = useState([]); // 로그 메시지를 저장할 상태
-  const logsEndRef = useRef(null); // 로그 끝 부분을 참조하는 ref
-  const textEndRef = useRef(null); // 텍스트 끝 부분을 참조하는 ref
+  const [logs, setLogs] = useState([]);
+  const logsEndRef = useRef(null);
+  const textEndRef = useRef(null);
+
+  // 최신 isListening 상태를 보관하기 위한 ref
+  const isListeningRef = useRef(isListening);
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   const addLog = (message) => {
     setLogs((prevLogs) => [...prevLogs, message]);
@@ -87,19 +91,17 @@ const App = () => {
         await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
           text: finalTranscript,
         });
-
         await axios.post(`${http}://${ipAddress}:${port}/save-interim-text`, {
           interimText,
         });
       };
 
+      // onend 이벤트에서 최신 isListening 상태(ref)를 참조하여 재시작 여부를 결정
       recog.onend = async () => {
-        // onend 이벤트 내에서 최신 상태에 접근이 필요하다면 useRef를 고려하세요.
-        if (isListening) {
-          addLog(`Recognition ended, saving text to server: ${text}`);
-          await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
-            text,
-          });
+        if (isListeningRef.current) {
+          addLog('Recognition ended unexpectedly, restarting...');
+          // 재시작 전에 필요한 추가 처리가 있다면 여기서 수행 가능
+          recog.start();
         }
       };
 
@@ -108,7 +110,7 @@ const App = () => {
       alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 의존성 배열을 빈 배열로 수정!
+  }, []); // 최초 한 번만 실행
 
   const handleListen = () => {
     if (recognition) {
@@ -167,12 +169,7 @@ const App = () => {
           className="memo-box"
         >
           <p style={{ whiteSpace: 'pre-line', margin: 0 }}>
-            <span
-              style={{
-                color: 'white',
-                display: 'inline',
-              }}
-            >
+            <span style={{ color: 'white', display: 'inline' }}>
               {text} <span style={{ color: 'white' }}>{interimText}</span>
             </span>
           </p>
