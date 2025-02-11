@@ -1,5 +1,11 @@
 // App.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import io from 'socket.io-client';
@@ -19,18 +25,25 @@ const { ipAddress } = await loadConfig();
 const { port, http } = config;
 const socket = io(`${http}://${ipAddress}:${port}`);
 
-// speakerId(혹은 svrname)를 기반으로 고유한 색상을 생성하는 함수
+// 전역 변수로 이미 할당된 스피커 색상 저장 (재할당 방지)
+const assignedSpeakerColors = {};
+const fixedColors = ['#D3D3D3', '#FFFF00', '#00FFFF'];
+
+// speakerId(혹은 svrname)를 기반으로 색상을 생성/할당하는 함수
 const hashStringToColor = (str) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  let color = '#';
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xff;
-    color += ('00' + value.toString(16)).slice(-2);
-  }
-  return color;
+  // 로컬스토리지 svrid (혹은 svrname)이 u01@ezpt.kr인 경우는 흰색 반환
+  if (str === '참석01') return '#fff';
+
+  // 이미 할당된 색상이 있으면 그대로 반환
+  if (assignedSpeakerColors[str]) return assignedSpeakerColors[str];
+
+  // 아직 할당되지 않았다면 fixedColors 배열에서 아직 사용되지 않은 색상을 선택
+  const usedColors = new Set(Object.values(assignedSpeakerColors));
+  const available = fixedColors.find((color) => !usedColors.has(color));
+  // 만약 모든 색상이 사용 중이면 (예외적으로) 첫번째 색상을 사용하도록 함
+  const newColor = available || fixedColors[0];
+  assignedSpeakerColors[str] = newColor;
+  return newColor;
 };
 
 const App = () => {
@@ -45,7 +58,7 @@ const App = () => {
   const [recognition, setRecognition] = useState(null);
   const [logs, setLogs] = useState([]);
 
-  // 스피커 정보: svrname를 speakerId로 사용하고, hashStringToColor로 color를 결정
+  // 현재 스피커 정보: svrname를 speakerId로 사용하고, hashStringToColor로 color 결정
   const [speakerId, setSpeakerId] = useState('');
   const [color, setColor] = useState('');
 
@@ -186,6 +199,15 @@ const App = () => {
     }
   }, [textData, interimMessages]);
 
+  // 참석한 스피커 목록: textData와 interimMessages의 speaker 필드 결합 (중복 제거)
+  const attendingSpeakers = useMemo(() => {
+    const speakersSet = new Set();
+    textData.forEach((msg) => speakersSet.add(msg.speaker));
+    Object.keys(interimMessages).forEach((sp) => speakersSet.add(sp));
+    if (svrname) speakersSet.add(svrname); // 현재 사용자 포함
+    return Array.from(speakersSet);
+  }, [textData, interimMessages, svrname]);
+
   return (
     <Router>
       <div
@@ -193,19 +215,24 @@ const App = () => {
           textAlign: 'center',
           marginTop: '50px',
           backgroundColor: 'transparent',
+          position: 'relative',
+          minHeight: '100vh',
         }}
       >
         <button onClick={handleListen} className="ats-start">
           {isListening ? '중지' : '시작'}
         </button>
+
+        {/* memo-box (채팅/메모 영역) */}
         <div
           style={{
             position: 'fixed',
             bottom: '42px',
             textAlign: 'left',
-            padding: '10px',
-            maxHeight: '30vh',
+            padding: '10px 10px 10px 110px',
+            maxHeight: '4em',
             overflowY: 'auto',
+            backgroundColor: 'rgba(0,0,0,0.8)',
           }}
           className="memo-box"
         >
@@ -218,7 +245,8 @@ const App = () => {
             <p
               key={speaker}
               style={{
-                color: interimMessages[speaker].color || 'blue',
+                color:
+                  interimMessages[speaker].color || hashStringToColor(speaker),
                 fontStyle: 'italic',
                 margin: 0,
               }}
@@ -228,6 +256,31 @@ const App = () => {
           ))}
           <div ref={textDataEndRef} />
         </div>
+
+        {/* 왼쪽에 참석한 svrname 목록 패널 (memo-box와 동일한 높이) */}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '42px',
+            left: '0px',
+            textAlign: 'left',
+            padding: '10px',
+            maxHeight: '4em',
+            overflowY: 'auto',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+          }}
+          className="attendee-list"
+        >
+          {attendingSpeakers.map((speaker) => (
+            <p
+              key={speaker}
+              style={{ color: hashStringToColor(speaker), margin: 0 }}
+            >
+              {speaker}
+            </p>
+          ))}
+        </div>
+
         <Routes>
           <Route
             path="/debug"
