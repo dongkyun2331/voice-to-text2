@@ -31,7 +31,7 @@ const fixedColors = ['#D3D3D3', '#FFFF00', '#00FFFF'];
 
 // speakerId(혹은 svrname)를 기반으로 색상을 생성/할당하는 함수
 const hashStringToColor = (str) => {
-  // 로컬스토리지 svrid (혹은 svrname)이 u01@ezpt.kr인 경우는 흰색 반환
+  // 로컬스토리지 svrname (혹은 svrname)이 '참석01'인 경우는 흰색 반환
   if (str === '참석01') return '#fff';
 
   // 이미 할당된 색상이 있으면 그대로 반환
@@ -47,9 +47,12 @@ const hashStringToColor = (str) => {
 };
 
 const App = () => {
-  // localStorage svrname 관련 상태
+  // localStorage svrname, svrgrp 관련 상태
   const [svrname, setSvrname] = useState(localStorage.getItem('svrname') || '');
   const [svrnameInput, setSvrnameInput] = useState(svrname);
+
+  const [svrgrp, setSvrgrp] = useState(localStorage.getItem('svrgrp') || '');
+  const [svrgrpInput, setSvrgrpInput] = useState(svrgrp);
 
   // 음성 인식 및 텍스트 데이터 관련 상태
   const [isListening, setIsListening] = useState(false);
@@ -81,14 +84,25 @@ const App = () => {
     }
   }, [svrname]);
 
+  // svrgrp가 설정되면 socket.io 방에 입장
+  useEffect(() => {
+    if (svrgrp) {
+      socket.emit('join', svrgrp);
+    }
+  }, [svrgrp]);
+
   const addLog = (message) => {
     setLogs((prevLogs) => [...prevLogs, message]);
   };
 
+  // svrgrp 값을 query 파라미터로 포함하여 서버의 텍스트 데이터를 가져옴
   const fetchTextFromServer = useCallback(async () => {
     try {
       addLog('Fetching text from server');
-      const result = await axios.get(`${http}://${ipAddress}:${port}/get-text`);
+      const result = await axios.get(
+        `${http}://${ipAddress}:${port}/get-text`,
+        { params: { svrgrp } }
+      );
       addLog('Fetched text data');
       setTextData(result.data.textData || []);
       setInterimMessages(result.data.interimMessages || {});
@@ -96,7 +110,7 @@ const App = () => {
       addLog(`Error fetching text: ${error}`);
       console.error('Error fetching text:', error);
     }
-  }, []);
+  }, [svrgrp]);
 
   // Socket.io 이벤트 처리
   useEffect(() => {
@@ -146,6 +160,7 @@ const App = () => {
             text: finalTranscript,
             speaker: speakerId,
             color: color,
+            svrgrp: svrgrp, // 그룹 정보 포함
           });
         }
         // 중간 텍스트 전송 (이전 텍스트는 덮어쓰기)
@@ -153,6 +168,7 @@ const App = () => {
           interimText: interimTranscript,
           speaker: speakerId,
           color: color,
+          svrgrp: svrgrp, // 그룹 정보 포함
         });
       };
 
@@ -167,7 +183,7 @@ const App = () => {
     } else {
       alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
     }
-  }, [speakerId, color]);
+  }, [speakerId, color, svrgrp]);
 
   // "시작" 버튼 클릭: 음성 인식 시작/중지 처리
   const handleListen = () => {
@@ -184,8 +200,8 @@ const App = () => {
   };
 
   useEffect(() => {
-    fetchTextFromServer();
-  }, [fetchTextFromServer]);
+    if (svrgrp) fetchTextFromServer();
+  }, [fetchTextFromServer, svrgrp]);
 
   useEffect(() => {
     if (logsEndRef.current) {
@@ -301,6 +317,7 @@ const App = () => {
                 ))}
                 <div ref={logsEndRef} />
                 <div style={{ textAlign: 'center', marginTop: '50px' }}>
+                  {/* svrname 설정 */}
                   <input
                     type="text"
                     value={svrnameInput}
@@ -319,7 +336,32 @@ const App = () => {
                       fontSize: '16px',
                     }}
                   >
-                    저장
+                    svrname 저장
+                  </button>
+                  {/* svrgrp 설정 */}
+                  <input
+                    type="text"
+                    value={svrgrpInput}
+                    onChange={(e) => setSvrgrpInput(e.target.value)}
+                    placeholder="svrgrp"
+                    style={{
+                      padding: '8px',
+                      fontSize: '16px',
+                      marginLeft: '10px',
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('svrgrp', svrgrpInput);
+                      setSvrgrp(svrgrpInput);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      marginLeft: '10px',
+                      fontSize: '16px',
+                    }}
+                  >
+                    svrgrp 저장
                   </button>
                 </div>
               </div>
