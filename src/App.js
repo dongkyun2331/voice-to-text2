@@ -224,6 +224,22 @@ const App = () => {
     return Array.from(speakersSet);
   }, [textData, interimMessages, svrname]);
 
+  // ★ PDF 저장 버튼 클릭 시 호출되는 함수
+  const handleSavePDF = async () => {
+    if (!svrname) {
+      addLog('svrname이 설정되지 않았습니다.');
+      return;
+    }
+    try {
+      addLog('PDF 저장 시도 중...');
+      await axios.post(`${http}://${ipAddress}:${port}/save-pdf`, { svrname });
+      addLog('PDF가 성공적으로 저장되었습니다.');
+    } catch (error) {
+      addLog(`PDF 저장 오류: ${error}`);
+      console.error(error);
+    }
+  };
+
   return (
     <Router>
       <div
@@ -237,6 +253,9 @@ const App = () => {
       >
         <button onClick={handleListen} className="ats-start">
           {isListening ? '중지' : '시작'}
+        </button>
+        <button onClick={handleSavePDF} className="ats-save-pdf">
+          PDF 저장
         </button>
 
         {/* memo-box (채팅/메모 영역) */}
