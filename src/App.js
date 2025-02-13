@@ -294,6 +294,9 @@ const App = () => {
               padding: '8px 12px',
               marginLeft: '10px',
               fontSize: '16px',
+              backgroundColor: '#3b75ac',
+              color: '#fff',
+              border: 'none',
             }}
           >
             저장
