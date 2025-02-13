@@ -51,7 +51,9 @@ const App = () => {
   const [svrname, setSvrname] = useState(localStorage.getItem('svrname') || '');
   const [svrnameInput, setSvrnameInput] = useState(svrname);
 
-  const [svrgrp, setSvrgrp] = useState(localStorage.getItem('svrgrp') || '');
+  const [svrgrp, setSvrgrp] = useState(
+    localStorage.getItem('svrgrp') || '334823'
+  );
   const [svrgrpInput, setSvrgrpInput] = useState(svrgrp);
 
   // 음성 인식 및 텍스트 데이터 관련 상태
