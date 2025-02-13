@@ -232,7 +232,10 @@ const App = () => {
     }
     try {
       addLog('PDF 저장 시도 중...');
-      await axios.post(`${http}://${ipAddress}:${port}/save-pdf`, { svrname });
+      await axios.post(`${http}://${ipAddress}:${port}/save-pdf`, {
+        svrname,
+        svrgrp,
+      });
       addLog('PDF가 성공적으로 저장되었습니다.');
     } catch (error) {
       addLog(`PDF 저장 오류: ${error}`);
