@@ -314,7 +314,6 @@ const App = () => {
             padding: '10px',
             height: '6em',
             overflowY: 'auto',
-            backgroundColor: 'rgba(0,0,0,0.8)',
           }}
           className="attendee-list"
         >
@@ -331,9 +330,11 @@ const App = () => {
               onClick={decreaseFontSize}
               style={{
                 padding: '2px',
-                background: '#fff',
+                background: 'none',
+                color: '#fff',
+                fontWeight: 'bold',
                 borderRadius: '50%',
-                fontSize: '16px',
+                fontSize: '20px',
               }}
             >
               -
@@ -365,9 +366,11 @@ const App = () => {
               onClick={increaseFontSize}
               style={{
                 padding: '2px',
-                background: '#fff',
+                background: 'none',
+                color: '#fff',
+                fontWeight: 'bold',
                 borderRadius: '50%',
-                fontSize: '16px',
+                fontSize: '20px',
               }}
             >
               +
