@@ -325,9 +325,17 @@ const App = () => {
               }}
             >
               {isListening ? (
-                <img src="/images/audio-on.png" style={{ width: '16px' }} />
+                <img
+                  src="/images/audio-on.png"
+                  style={{ width: '16px' }}
+                  alt="Audio on"
+                />
               ) : (
-                <img src="/images/audiounmute.png" style={{ width: '16px' }} />
+                <img
+                  src="/images/audiounmute.png"
+                  style={{ width: '16px' }}
+                  alt="Audio off"
+                />
               )}
             </button>
           </div>
