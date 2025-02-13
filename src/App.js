@@ -254,9 +254,6 @@ const App = () => {
           minHeight: '100vh',
         }}
       >
-        <button onClick={handleListen} className="ats-start">
-          {isListening ? '중지' : '시작'}
-        </button>
         <button onClick={handleSavePDF} className="ats-save-pdf">
           PDF 저장
         </button>
@@ -317,6 +314,23 @@ const App = () => {
               {speaker}
             </p>
           ))}
+          <div style={{ position: 'absolute', bottom: '0' }}>
+            <button
+              onClick={handleListen}
+              className="ats-start"
+              style={{
+                background: '#fff',
+                padding: '2px',
+                borderRadius: '50%',
+              }}
+            >
+              {isListening ? (
+                <img src="/images/audio-on.png" style={{ width: '16px' }} />
+              ) : (
+                <img src="/images/audiounmute.png" style={{ width: '16px' }} />
+              )}
+            </button>
+          </div>
         </div>
 
         <Routes>
