@@ -64,6 +64,7 @@ const App = () => {
   // 현재 스피커 정보: svrname를 speakerId로 사용하고, hashStringToColor로 color 결정
   const [speakerId, setSpeakerId] = useState('');
   const [color, setColor] = useState('');
+  const [fontSize, setFontSize] = useState(16);
 
   const logsEndRef = useRef(null);
   const textDataEndRef = useRef(null);
@@ -243,6 +244,16 @@ const App = () => {
     }
   };
 
+  // 폰트 크기 증가 함수
+  const increaseFontSize = () => {
+    setFontSize((prevSize) => prevSize + 2);
+  };
+
+  // 폰트 크기 감소 함수
+  const decreaseFontSize = () => {
+    setFontSize((prevSize) => prevSize - 2);
+  };
+
   return (
     <Router>
       <div
@@ -268,6 +279,7 @@ const App = () => {
             height: '6em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
+            fontSize: `${fontSize}px`,
           }}
           className="memo-box"
         >
@@ -316,6 +328,17 @@ const App = () => {
           ))}
           <div style={{ position: 'absolute', bottom: '0' }}>
             <button
+              onClick={decreaseFontSize}
+              style={{
+                padding: '2px',
+                background: '#fff',
+                borderRadius: '50%',
+                fontSize: '16px',
+              }}
+            >
+              -
+            </button>
+            <button
               onClick={handleListen}
               className="ats-start"
               style={{
@@ -337,6 +360,17 @@ const App = () => {
                   alt="Audio off"
                 />
               )}
+            </button>
+            <button
+              onClick={increaseFontSize}
+              style={{
+                padding: '2px',
+                background: '#fff',
+                borderRadius: '50%',
+                fontSize: '16px',
+              }}
+            >
+              +
             </button>
           </div>
         </div>
