@@ -27,7 +27,7 @@ const socket = io(`${http}://${ipAddress}:${port}`);
 
 // 전역 변수로 이미 할당된 스피커 색상 저장 (재할당 방지)
 const assignedSpeakerColors = {};
-const fixedColors = ['#D3D3D3', '#FFFF00', '#00FFFF'];
+const fixedColors = ['skyblue', '#FFFF00', '#00FFFF'];
 
 // speakerId(혹은 svrname)를 기반으로 색상을 생성/할당하는 함수
 const hashStringToColor = (str) => {
