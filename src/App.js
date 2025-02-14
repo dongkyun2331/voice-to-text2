@@ -352,6 +352,7 @@ const App = () => {
             padding: '10px',
             height: '6em',
             overflowY: 'auto',
+            minWidth: '70px',
           }}
           className="attendee-list"
         >
