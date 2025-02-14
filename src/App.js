@@ -280,30 +280,43 @@ const App = () => {
             }}
             className="ats-nickname"
           >
-            <input
-              type="text"
-              value={svrnameInput}
-              onChange={(e) => setSvrnameInput(e.target.value)}
-              placeholder="닉네임"
-              style={{ padding: '8px', fontSize: '16px' }}
-            />
-            <button
-              onClick={() => {
-                localStorage.setItem('svrname', svrnameInput);
-                setSvrname(svrnameInput);
-                document.querySelector('.ats-nickname').style.display = 'none';
-              }}
+            <div
               style={{
-                padding: '8px 12px',
-                marginLeft: '10px',
-                fontSize: '16px',
-                backgroundColor: '#3b75ac',
+                backgroundColor: '#2196F3',
                 color: '#fff',
-                border: 'none',
+                padding: '10px',
+                textAlign: 'left',
               }}
             >
-              저장
-            </button>
+              닉네임 설정
+            </div>
+            <div style={{ backgroundColor: '#f1f1f1', padding: '10px' }}>
+              <input
+                type="text"
+                value={svrnameInput}
+                onChange={(e) => setSvrnameInput(e.target.value)}
+                placeholder="닉네임"
+                style={{ padding: '8px', fontSize: '16px' }}
+              />
+              <button
+                onClick={() => {
+                  localStorage.setItem('svrname', svrnameInput);
+                  setSvrname(svrnameInput);
+                  document.querySelector('.ats-nickname').style.display =
+                    'none';
+                }}
+                style={{
+                  padding: '8px 12px',
+                  marginLeft: '10px',
+                  fontSize: '16px',
+                  backgroundColor: '#3b75ac',
+                  color: '#fff',
+                  border: 'none',
+                }}
+              >
+                저장
+              </button>
+            </div>
           </div>
         )}
 
