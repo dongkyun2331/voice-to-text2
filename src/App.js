@@ -313,8 +313,8 @@ const App = () => {
             position: 'fixed',
             bottom: '42px',
             textAlign: 'left',
-            padding: '10px 10px 10px 100px',
-            height: '6em',
+            padding: '10px 10px 10px 150px',
+            minHeight: '6em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
             fontSize: `${fontSize}px`,
@@ -322,7 +322,7 @@ const App = () => {
           className="memo-box"
         >
           {textData.map((msg, index) => (
-            <p key={index} style={{ color: msg.color || 'blue', margin: 0 }}>
+            <p key={index} style={{ color: msg.color || '#fff', margin: 0 }}>
               {msg.text}
             </p>
           ))}
@@ -352,7 +352,7 @@ const App = () => {
             padding: '10px',
             height: '6em',
             overflowY: 'auto',
-            minWidth: '70px',
+            minWidth: '120px',
           }}
           className="attendee-list"
         >
@@ -385,6 +385,7 @@ const App = () => {
               style={{
                 background: '#fff',
                 padding: '2px',
+                margin: '0 20px',
                 borderRadius: '50%',
               }}
             >
