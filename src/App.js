@@ -327,7 +327,7 @@ const App = () => {
             bottom: '42px',
             textAlign: 'left',
             padding: '10px 10px 10px 150px',
-            minHeight: '6em',
+            height: '6em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
             fontSize: `${fontSize}px`,
