@@ -326,7 +326,7 @@ const App = () => {
             position: 'fixed',
             bottom: '42px',
             textAlign: 'left',
-            padding: '10px 10px 10px 150px',
+            padding: '10px 10px 10px 165px',
             height: '6em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
@@ -364,20 +364,26 @@ const App = () => {
             textAlign: 'left',
             padding: '10px',
             height: '6em',
-            overflowY: 'auto',
-            minWidth: '140px',
+            minWidth: '155px',
           }}
           className="attendee-list"
         >
-          {attendingSpeakers.map((speaker) => (
-            <p
-              key={speaker}
-              style={{ color: hashStringToColor(speaker), margin: 0 }}
-            >
-              {speaker}
-            </p>
-          ))}
-          <div style={{ position: 'absolute', bottom: '0' }}>
+          <div
+            style={{
+              overflowY: 'auto',
+              height: 'calc(100% - 50px)',
+            }}
+          >
+            {attendingSpeakers.map((speaker) => (
+              <p
+                key={speaker}
+                style={{ color: hashStringToColor(speaker), margin: 0 }}
+              >
+                {speaker}
+              </p>
+            ))}
+          </div>
+          <div>
             <button
               onClick={decreaseFontSize}
               style={{
