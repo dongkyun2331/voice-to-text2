@@ -270,7 +270,7 @@ const App = () => {
         <button onClick={handleSavePDF} className="ats-save-pdf">
           PDF 저장
         </button>
-        {!svrname && (
+        {(!svrname || svrname === 'unknown') && (
           <div
             style={{
               position: 'fixed',
