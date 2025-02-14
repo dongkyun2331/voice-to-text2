@@ -373,7 +373,7 @@ const App = () => {
                 color: '#fff',
                 fontWeight: 'bold',
                 borderRadius: '50%',
-                fontSize: '20px',
+                fontSize: '40px',
                 border: 'none',
               }}
             >
@@ -392,13 +392,13 @@ const App = () => {
               {isListening ? (
                 <img
                   src="/images/audio-on.png"
-                  style={{ width: '16px' }}
+                  style={{ width: '30px' }}
                   alt="Audio on"
                 />
               ) : (
                 <img
                   src="/images/audiounmute.png"
-                  style={{ width: '16px' }}
+                  style={{ width: '30px' }}
                   alt="Audio off"
                 />
               )}
@@ -411,7 +411,7 @@ const App = () => {
                 color: '#fff',
                 fontWeight: 'bold',
                 borderRadius: '50%',
-                fontSize: '20px',
+                fontSize: '40px',
                 border: 'none',
               }}
             >
