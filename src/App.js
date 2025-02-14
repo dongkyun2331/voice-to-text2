@@ -335,12 +335,12 @@ const App = () => {
           className="memo-box"
         >
           {textData.map((msg, index) => (
-            <p key={index} style={{ color: msg.color || '#fff', margin: 0 }}>
+            <span key={index} style={{ color: msg.color || '#fff', margin: 0 }}>
               {msg.text}
-            </p>
+            </span>
           ))}
           {Object.keys(interimMessages).map((speaker) => (
-            <p
+            <span
               key={speaker}
               style={{
                 color:
@@ -349,8 +349,8 @@ const App = () => {
                 margin: 0,
               }}
             >
-              {interimMessages[speaker].interimText}
-            </p>
+              {interimMessages[speaker].interimText}{' '}
+            </span>
           ))}
           <div ref={textDataEndRef} />
         </div>
