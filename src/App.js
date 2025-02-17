@@ -40,7 +40,7 @@ const hashStringToColor = (str) => {
   // 아직 할당되지 않았다면 fixedColors 배열에서 아직 사용되지 않은 색상을 선택
   const usedColors = new Set(Object.values(assignedSpeakerColors));
   const available = fixedColors.find((color) => !usedColors.has(color));
-  // 만약 모든 색상이 사용 중이면 (예외적으로) 첫번째 색상을 사용하도록 함
+  // 만약 모든 색상이 사용 중이면 (예외적으로) 첫번째 색상을 사용
   const newColor = available || fixedColors[0];
   assignedSpeakerColors[str] = newColor;
   return newColor;
@@ -68,6 +68,9 @@ const App = () => {
   const [color, setColor] = useState('');
   const [fontSize, setFontSize] = useState(16);
 
+  // attendee-list 클릭 시 버튼을 표시/숨기기 위한 상태
+  const [showAttendeeControls, setShowAttendeeControls] = useState(false);
+
   const logsEndRef = useRef(null);
   const textDataEndRef = useRef(null);
 
@@ -77,7 +80,7 @@ const App = () => {
     isListeningRef.current = isListening;
   }, [isListening]);
 
-  // svrname이 있으면 speakerId와 color를 초기화 (마운트 시 또는 svrname이 변경될 때)
+  // svrname이 있으면 speakerId와 color를 초기화
   useEffect(() => {
     if (svrname) {
       setSpeakerId(svrname);
@@ -104,7 +107,9 @@ const App = () => {
       addLog('Fetching text from server');
       const result = await axios.get(
         `${http}://${ipAddress}:${port}/get-text`,
-        { params: { svrgrp } }
+        {
+          params: { svrgrp },
+        }
       );
       addLog('Fetched text data');
       setTextData(result.data.textData || []);
@@ -163,7 +168,7 @@ const App = () => {
             text: finalTranscript,
             speaker: speakerId,
             color: color,
-            svrgrp: svrgrp, // 그룹 정보 포함
+            svrgrp: svrgrp,
           });
         }
         // 중간 텍스트 전송 (이전 텍스트는 덮어쓰기)
@@ -171,7 +176,7 @@ const App = () => {
           interimText: interimTranscript,
           speaker: speakerId,
           color: color,
-          svrgrp: svrgrp, // 그룹 정보 포함
+          svrgrp: svrgrp,
         });
       };
 
@@ -218,12 +223,12 @@ const App = () => {
     }
   }, [textData, interimMessages]);
 
-  // 참석한 스피커 목록: textData와 interimMessages의 speaker 필드 결합 (중복 제거)
+  // 참석한 스피커 목록
   const attendingSpeakers = useMemo(() => {
     const speakersSet = new Set();
     textData.forEach((msg) => speakersSet.add(msg.speaker));
     Object.keys(interimMessages).forEach((sp) => speakersSet.add(sp));
-    if (svrname) speakersSet.add(svrname); // 현재 사용자 포함
+    if (svrname) speakersSet.add(svrname); // 현재 사용자도 추가
     return Array.from(speakersSet);
   }, [textData, interimMessages, svrname]);
 
@@ -246,14 +251,14 @@ const App = () => {
     }
   };
 
-  // 폰트 크기 증가 함수
+  // 폰트 크기 증가
   const increaseFontSize = () => {
     setFontSize((prevSize) => prevSize + 2);
   };
 
-  // 폰트 크기 감소 함수
+  // 폰트 크기 감소
   const decreaseFontSize = () => {
-    setFontSize((prevSize) => prevSize - 2);
+    setFontSize((prevSize) => Math.max(2, prevSize - 2)); // 최소 2px
   };
 
   return (
@@ -330,6 +335,7 @@ const App = () => {
             height: '6em',
             overflowY: 'auto',
             backgroundColor: 'rgba(0,0,0,0.8)',
+            width: '100%',
             fontSize: `${fontSize}px`,
           }}
           className="memo-box"
@@ -355,7 +361,7 @@ const App = () => {
           <div ref={textDataEndRef} />
         </div>
 
-        {/* 왼쪽에 참석한 svrname 목록 패널 (memo-box와 동일한 높이) */}
+        {/* 참석자 목록 영역 */}
         <div
           style={{
             position: 'fixed',
@@ -367,11 +373,17 @@ const App = () => {
             minWidth: '155px',
           }}
           className="attendee-list"
+          onClick={() => setShowAttendeeControls(!showAttendeeControls)}
         >
+          {/* 
+    showAttendeeControls 값에 따라 높이를 다르게 지정.
+    - false일 때(버튼이 안 보일 때): height: 100%
+    - true일 때(버튼이 보일 때): height: calc(100% - 50px)
+  */}
           <div
             style={{
               overflowY: 'auto',
-              height: 'calc(100% - 50px)',
+              height: showAttendeeControls ? 'calc(100% - 50px)' : '100%',
             }}
           >
             {attendingSpeakers.map((speaker) => (
@@ -383,60 +395,72 @@ const App = () => {
               </p>
             ))}
           </div>
-          <div>
-            <button
-              onClick={decreaseFontSize}
-              style={{
-                padding: '2px',
-                background: 'none',
-                color: '#fff',
-                fontWeight: 'bold',
-                borderRadius: '50%',
-                fontSize: '40px',
-                border: 'none',
-              }}
-            >
-              -
-            </button>
-            <button
-              onClick={handleListen}
-              className="ats-start"
-              style={{
-                background: '#fff',
-                padding: '2px',
-                margin: '0 20px',
-                borderRadius: '50%',
-              }}
-            >
-              {isListening ? (
-                <img
-                  src="/images/audio-on.png"
-                  style={{ width: '30px' }}
-                  alt="Audio on"
-                />
-              ) : (
-                <img
-                  src="/images/audiounmute.png"
-                  style={{ width: '30px' }}
-                  alt="Audio off"
-                />
-              )}
-            </button>
-            <button
-              onClick={increaseFontSize}
-              style={{
-                padding: '2px',
-                background: 'none',
-                color: '#fff',
-                fontWeight: 'bold',
-                borderRadius: '50%',
-                fontSize: '40px',
-                border: 'none',
-              }}
-            >
-              +
-            </button>
-          </div>
+
+          {showAttendeeControls && (
+            <div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  decreaseFontSize();
+                }}
+                style={{
+                  padding: '2px',
+                  background: 'none',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  borderRadius: '50%',
+                  fontSize: '40px',
+                  border: 'none',
+                }}
+              >
+                -
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleListen();
+                }}
+                className="ats-start"
+                style={{
+                  background: '#fff',
+                  padding: '2px',
+                  margin: '0 20px',
+                  borderRadius: '50%',
+                }}
+              >
+                {isListening ? (
+                  <img
+                    src="/images/audio-on.png"
+                    style={{ width: '30px' }}
+                    alt="Audio on"
+                  />
+                ) : (
+                  <img
+                    src="/images/audiounmute.png"
+                    style={{ width: '30px' }}
+                    alt="Audio off"
+                  />
+                )}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  increaseFontSize();
+                }}
+                style={{
+                  padding: '2px',
+                  background: 'none',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  borderRadius: '50%',
+                  fontSize: '40px',
+                  border: 'none',
+                }}
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
 
         <Routes>
