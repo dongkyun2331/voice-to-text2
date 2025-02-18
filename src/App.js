@@ -9,8 +9,9 @@ import React, {
 import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import io from 'socket.io-client';
-import config from './config'; // 예: { port: 3000, http: 'http' }
+import config from './config'; // { port: 3000, http: 'http', ipAddress: 'localhost' }
 
+// (예시) config.json을 동적으로 불러오는 함수
 const loadConfig = async () => {
   try {
     const response = await axios.get('/config.json');
@@ -21,34 +22,42 @@ const loadConfig = async () => {
   }
 };
 
-const { ipAddress } = await loadConfig();
 const { port, http } = config;
+let ipAddress = 'localhost'; // 기본값
+
+// 실제 config.json 불러오기
+const configData = await loadConfig();
+if (configData && configData.ipAddress) {
+  ipAddress = configData.ipAddress;
+}
+
+// 소켓 연결
 const socket = io(`${http}://${ipAddress}:${port}`);
 
-// 전역 변수로 이미 할당된 스피커 색상 저장 (재할당 방지)
+// 전역 변수(혹은 모듈 전역)에 할당된 색상들 저장
 const assignedSpeakerColors = {};
 const fixedColors = ['skyblue', '#FFFF00', '#00FFFF'];
 
-// speakerId(혹은 svrname)를 기반으로 색상을 생성/할당하는 함수
+// speakerId를 기반으로 색상 생성/할당
 const hashStringToColor = (str) => {
-  // 로컬스토리지 svrname (혹은 svrname)이 '참석01'인 경우는 흰색 반환
+  // 'svrid'가 특정 값인 경우 흰색 (예시 로직)
   if (localStorage.getItem('svrid') === 'u01@ezpt.kr') return '#fff';
 
-  // 이미 할당된 색상이 있으면 그대로 반환
   if (assignedSpeakerColors[str]) return assignedSpeakerColors[str];
 
-  // 아직 할당되지 않았다면 fixedColors 배열에서 아직 사용되지 않은 색상을 선택
   const usedColors = new Set(Object.values(assignedSpeakerColors));
   const available = fixedColors.find((color) => !usedColors.has(color));
-  // 만약 모든 색상이 사용 중이면 (예외적으로) 첫번째 색상을 사용
   const newColor = available || fixedColors[0];
   assignedSpeakerColors[str] = newColor;
   return newColor;
 };
 
 const App = () => {
-  // localStorage svrname, svrgrp 관련 상태
-  const [svrname, setSvrname] = useState(localStorage.getItem('svrname') || '');
+  // localStorage에서 svrname, svrgrp 읽어오기
+  const [svrname, setSvrname] = useState(
+    localStorage.getItem('svrname') || 'unknown'
+  );
+  // 화면에 표시될 닉네임 input
   const [svrnameInput, setSvrnameInput] = useState(svrname);
 
   const [svrgrp, setSvrgrp] = useState(
@@ -56,71 +65,77 @@ const App = () => {
   );
   const [svrgrpInput, setSvrgrpInput] = useState(svrgrp);
 
-  // 음성 인식 및 텍스트 데이터 관련 상태
   const [isListening, setIsListening] = useState(false);
   const [textData, setTextData] = useState([]); // [{ text, speaker, color }, ...]
-  const [interimMessages, setInterimMessages] = useState({}); // { speaker: { interimText, color } }
+  const [interimMessages, setInterimMessages] = useState({});
   const [recognition, setRecognition] = useState(null);
   const [logs, setLogs] = useState([]);
 
-  // 현재 스피커 정보: svrname를 speakerId로 사용하고, hashStringToColor로 color 결정
   const [speakerId, setSpeakerId] = useState('');
   const [color, setColor] = useState('');
   const [fontSize, setFontSize] = useState(16);
 
-  // attendee-list 클릭 시 버튼을 표시/숨기기 위한 상태
+  // 참석자 목록 클릭 시 버튼을 표시할지 여부
   const [showAttendeeControls, setShowAttendeeControls] = useState(false);
+
+  // 닉네임 모달(팝업) 열림 상태
+  const [showNicknameModal, setShowNicknameModal] = useState(
+    !svrname || svrname === 'unknown'
+  );
+
+  // 5초 뒤 자동 저장 타이머를 관리할 ref
+  const autoSaveTimerRef = useRef(null);
 
   const logsEndRef = useRef(null);
   const textDataEndRef = useRef(null);
-
-  // 최신 isListening 상태 참조 (onend 클로저 문제 해결용)
   const isListeningRef = useRef(isListening);
+
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
 
-  // svrname이 있으면 speakerId와 color를 초기화
+  // 소켓: 방 입장
+  useEffect(() => {
+    socket.emit('join', { svrgrp, svrname });
+  }, [svrgrp, svrname]);
+
+  // 서버가 "assignName" 보낼 때 → svrnameInput에 표시하고, 5초 후 자동 저장
+  useEffect(() => {
+    socket.on('assignName', (assignedName) => {
+      console.log('서버에서 할당된 닉네임:', assignedName);
+      setSvrnameInput(assignedName);
+
+      // 닉네임 모달이 안 떠 있으면 띄우기 (자동 할당된 닉네임을 보여주기 위해)
+      setShowNicknameModal(true);
+
+      // 기존 타이머가 있으면 지우고 다시 설정
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      // 5초 후 자동으로 localStorage & state에 반영 + 모달 닫기
+      autoSaveTimerRef.current = setTimeout(() => {
+        localStorage.setItem('svrname', assignedName);
+        setSvrname(assignedName);
+        setShowNicknameModal(false);
+      }, 5000);
+    });
+
+    return () => {
+      socket.off('assignName');
+    };
+  }, []);
+
+  // svrname 바뀔 때 색상과 speakerId 설정
   useEffect(() => {
     if (svrname) {
       setSpeakerId(svrname);
       const newColor = hashStringToColor(svrname);
       setColor(newColor);
-      console.log('Initialized speaker:', svrname, 'with color:', newColor);
     }
   }, [svrname]);
 
-  // svrgrp가 설정되면 socket.io 방에 입장
-  useEffect(() => {
-    if (svrgrp) {
-      socket.emit('join', svrgrp);
-    }
-  }, [svrgrp]);
-
-  const addLog = (message) => {
-    setLogs((prevLogs) => [...prevLogs, message]);
-  };
-
-  // svrgrp 값을 query 파라미터로 포함하여 서버의 텍스트 데이터를 가져옴
-  const fetchTextFromServer = useCallback(async () => {
-    try {
-      addLog('Fetching text from server');
-      const result = await axios.get(
-        `${http}://${ipAddress}:${port}/get-text`,
-        {
-          params: { svrgrp },
-        }
-      );
-      addLog('Fetched text data');
-      setTextData(result.data.textData || []);
-      setInterimMessages(result.data.interimMessages || {});
-    } catch (error) {
-      addLog(`Error fetching text: ${error}`);
-      console.error('Error fetching text:', error);
-    }
-  }, [svrgrp]);
-
-  // Socket.io 이벤트 처리
+  // Socket.io: initial-text, new-text, new-interim-text
   useEffect(() => {
     socket.on('initial-text', (data) => {
       setTextData(data.textData || []);
@@ -161,7 +176,7 @@ const App = () => {
             interimTranscript += transcript;
           }
         }
-        // 최종 텍스트가 있다면 서버에 전송 (현재 스피커의 메시지로 추가)
+        // 최종 텍스트
         if (finalTranscript.trim() !== '') {
           addLog(`Saving text to server: ${finalTranscript}`);
           await axios.post(`${http}://${ipAddress}:${port}/save-text`, {
@@ -171,7 +186,7 @@ const App = () => {
             svrgrp: svrgrp,
           });
         }
-        // 중간 텍스트 전송 (이전 텍스트는 덮어쓰기)
+        // 중간 텍스트
         await axios.post(`${http}://${ipAddress}:${port}/save-interim-text`, {
           interimText: interimTranscript,
           speaker: speakerId,
@@ -180,7 +195,7 @@ const App = () => {
         });
       };
 
-      recog.onend = async () => {
+      recog.onend = () => {
         if (isListeningRef.current) {
           addLog('Recognition ended unexpectedly, restarting...');
           recog.start();
@@ -193,7 +208,32 @@ const App = () => {
     }
   }, [speakerId, color, svrgrp]);
 
-  // "시작" 버튼 클릭: 음성 인식 시작/중지 처리
+  // 서버에서 텍스트 데이터 가져오기
+  const addLog = (msg) => setLogs((prev) => [...prev, msg]);
+  const fetchTextFromServer = useCallback(async () => {
+    try {
+      addLog('Fetching text from server');
+      const result = await axios.get(
+        `${http}://${ipAddress}:${port}/get-text`,
+        {
+          params: { svrgrp },
+        }
+      );
+      addLog('Fetched text data');
+      setTextData(result.data.textData || []);
+      setInterimMessages(result.data.interimMessages || {});
+    } catch (error) {
+      addLog(`Error fetching text: ${error}`);
+    }
+  }, [svrgrp]);
+
+  useEffect(() => {
+    if (svrgrp) {
+      fetchTextFromServer();
+    }
+  }, [fetchTextFromServer, svrgrp]);
+
+  // 음성인식 시작/중지
   const handleListen = () => {
     if (recognition) {
       if (isListening) {
@@ -207,32 +247,30 @@ const App = () => {
     }
   };
 
-  useEffect(() => {
-    if (svrgrp) fetchTextFromServer();
-  }, [fetchTextFromServer, svrgrp]);
-
+  // 로그 스크롤
   useEffect(() => {
     if (logsEndRef.current) {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs]);
 
+  // 텍스트창 스크롤
   useEffect(() => {
     if (textDataEndRef.current) {
       textDataEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [textData, interimMessages]);
 
-  // 참석한 스피커 목록
+  // 참석자 목록
   const attendingSpeakers = useMemo(() => {
     const speakersSet = new Set();
     textData.forEach((msg) => speakersSet.add(msg.speaker));
     Object.keys(interimMessages).forEach((sp) => speakersSet.add(sp));
-    if (svrname) speakersSet.add(svrname); // 현재 사용자도 추가
+    if (svrname) speakersSet.add(svrname);
     return Array.from(speakersSet);
   }, [textData, interimMessages, svrname]);
 
-  // ★ PDF 저장 버튼 클릭 시 호출되는 함수
+  // PDF 저장
   const handleSavePDF = async () => {
     if (!svrname) {
       addLog('svrname이 설정되지 않았습니다.');
@@ -247,18 +285,24 @@ const App = () => {
       addLog('PDF가 성공적으로 저장되었습니다.');
     } catch (error) {
       addLog(`PDF 저장 오류: ${error}`);
-      console.error(error);
     }
   };
 
-  // 폰트 크기 증가
-  const increaseFontSize = () => {
-    setFontSize((prevSize) => prevSize + 2);
-  };
+  // 폰트 크기 조절
+  const increaseFontSize = () => setFontSize((prev) => prev + 2);
+  const decreaseFontSize = () => setFontSize((prev) => Math.max(2, prev - 2));
 
-  // 폰트 크기 감소
-  const decreaseFontSize = () => {
-    setFontSize((prevSize) => Math.max(2, prevSize - 2)); // 최소 2px
+  // 닉네임 모달에서 "수동 저장" 버튼 (원한다면 사용자에게 직접 저장 시키는 로직)
+  // 지금 요구사항은 "5초 뒤 자동 저장"이므로, 여유로 남겨 둠
+  const handleManualNicknameSave = () => {
+    localStorage.setItem('svrname', svrnameInput);
+    setSvrname(svrnameInput);
+    setShowNicknameModal(false);
+    // 5초 타이머가 동작 중이면 해제
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
   };
 
   return (
@@ -272,17 +316,22 @@ const App = () => {
           minHeight: '100vh',
         }}
       >
+        {/* PDF 저장 버튼 */}
         <button onClick={handleSavePDF} className="ats-save-pdf">
           PDF 저장
         </button>
-        {(!svrname || svrname === 'unknown') && (
+
+        {/* 닉네임 모달(팝업) */}
+        {showNicknameModal && (
           <div
             style={{
               position: 'fixed',
               left: '50%',
               top: '50%',
               transform: 'translate(-50%,-50%)',
-              zIndex: '1',
+              zIndex: 1000,
+              border: '1px solid #ccc',
+              backgroundColor: '#fff',
             }}
             className="ats-nickname"
           >
@@ -296,7 +345,7 @@ const App = () => {
             >
               닉네임 설정
             </div>
-            <div style={{ backgroundColor: '#f1f1f1', padding: '10px' }}>
+            <div style={{ padding: '10px' }}>
               <input
                 type="text"
                 value={svrnameInput}
@@ -304,13 +353,13 @@ const App = () => {
                 placeholder="닉네임"
                 style={{ padding: '8px', fontSize: '16px' }}
               />
+              <p style={{ fontSize: '14px', color: '#666' }}>
+                (5초 후 자동 저장 예정)
+              </p>
+              {/* 만약 "직접 저장" 버튼을 두고 싶다면: */}
+              {/* 
               <button
-                onClick={() => {
-                  localStorage.setItem('svrname', svrnameInput);
-                  setSvrname(svrnameInput);
-                  document.querySelector('.ats-nickname').style.display =
-                    'none';
-                }}
+                onClick={handleManualNicknameSave}
                 style={{
                   padding: '8px 12px',
                   marginLeft: '10px',
@@ -320,13 +369,14 @@ const App = () => {
                   border: 'none',
                 }}
               >
-                저장
+                수동 저장
               </button>
+              */}
             </div>
           </div>
         )}
 
-        {/* memo-box (채팅/메모 영역) */}
+        {/* 메모(채팅) 박스 */}
         <div
           style={{
             position: 'fixed',
@@ -376,11 +426,6 @@ const App = () => {
           className="attendee-list"
           onClick={() => setShowAttendeeControls(!showAttendeeControls)}
         >
-          {/* 
-    showAttendeeControls 값에 따라 높이를 다르게 지정.
-    - false일 때(버튼이 안 보일 때): height: 100%
-    - true일 때(버튼이 보일 때): height: calc(100% - 50px)
-  */}
           <div
             style={{
               overflowY: 'auto',
@@ -464,6 +509,7 @@ const App = () => {
           )}
         </div>
 
+        {/* 라우터 설정 (예: /debug에서 로그 확인) */}
         <Routes>
           <Route
             path="/debug"
@@ -484,7 +530,7 @@ const App = () => {
                 ))}
                 <div ref={logsEndRef} />
                 <div style={{ textAlign: 'center', marginTop: '50px' }}>
-                  {/* svrname 설정 */}
+                  {/* svrname 수동 수정 */}
                   <input
                     type="text"
                     value={svrnameInput}
@@ -505,7 +551,7 @@ const App = () => {
                   >
                     svrname 저장
                   </button>
-                  {/* svrgrp 설정 */}
+                  {/* svrgrp 수동 수정 */}
                   <input
                     type="text"
                     value={svrgrpInput}
@@ -534,7 +580,7 @@ const App = () => {
               </div>
             }
           />
-          <Route path="/" element={<div></div>} />
+          <Route path="/" element={<div />} />
         </Routes>
       </div>
     </Router>
