@@ -32,7 +32,7 @@ const fixedColors = ['skyblue', '#FFFF00', '#00FFFF'];
 // speakerId(혹은 svrname)를 기반으로 색상을 생성/할당하는 함수
 const hashStringToColor = (str) => {
   // 로컬스토리지 svrname (혹은 svrname)이 '참석01'인 경우는 흰색 반환
-  if (str === '참석01') return '#fff';
+  if (localStorage.getItem('svrid') === 'u01@ezpt.kr') return '#fff';
 
   // 이미 할당된 색상이 있으면 그대로 반환
   if (assignedSpeakerColors[str]) return assignedSpeakerColors[str];
